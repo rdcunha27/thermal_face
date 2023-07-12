@@ -61,7 +61,7 @@ class ThermalFrame(object):
             face.previous = None
 
     @deprecated(reason='annotated_frame is deprecated, use visualizer for visualization instead.')
-    def annotated_frame(self, annotate_temperature=True, annotate_breath_rate=True):
+    def annotated_frame(self, annotate_breath_rate=False):
         """ Returns a grey frame with annotation, used for visualization.
 
         Args:
@@ -79,18 +79,6 @@ class ThermalFrame(object):
                 (255, 0, 0), 
                 1
             )
-            if annotate_temperature:
-                temperature = face.temperature
-                if temperature is not None:
-                    cv2.putText(
-                        annotated_frame,
-                        str(temperature)[:5] + ' C',
-                        tuple(face.bounding_box[:2]),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.5,
-                        (255, 0, 0),
-                        1
-                    )
             if annotate_breath_rate:
                 breath_rate = face.breath_rate
                 if breath_rate is not None:

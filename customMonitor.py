@@ -6,11 +6,14 @@ import thermal_monitor.config as config
 from thermal_monitor.thermal_frame import ThermalFrame
 import thermal_monitor.utils as utils
 
-# path_mov = r"U:\Users Common\NLamb\CANDOR\captures\ca_demo_v2.1_alex\ca_video_thermal.mp4"
+# path_mov = r"C:\Users\RDCunha\Documents\GitHub\CANDOR\thermal_monitoring\high_low_high_breathingl.mp4"
 path_mov = r"U:\Users Common\NLamb\CANDOR\captures\ca_demo_v3_alex\ca_video_thermal.mp4"
 count = 0 
 frame_counter = 0
-total_frame_counter = 600
+error_counter = 0
+total_frame_counter = 500
+start_frame_counter = 0
+start_frame = 0
 success = True
 final_face = []
 final_br = []
@@ -20,9 +23,6 @@ thermal_frame_queue = []
 temperature_pool = {}
 breath_rate_pool = {}
 breath_curve_ax_pool = {}
-# breath_curve_figure_state = False
-# breath_curve_figure = None
-# update_counter = config.BREATH_CURVE_UPDATE_FRAMES
 timestamp = []
 timestamp_frame = []
 
@@ -113,7 +113,18 @@ except:
 
 
 while frame_counter < total_frame_counter:
+    success, frame = video.read()
+
+    if not success:
+        error_counter += 1
+        continue
+
+    if start_frame > start_frame_counter:
+        start_frame_counter += 1
+        continue
+
     frame_counter += 1
+
     count += (1/60)
     timestamp.append(count)
     timestamp_frame.append(count)
@@ -121,7 +132,6 @@ while frame_counter < total_frame_counter:
         timestamp_frame = []
     # print("Timestamp main:")
     # print(timestamp)
-    success, frame = video.read()
 
     print('Visualizing estimation result. Press Ctrl + C to stop.')
     # print("entered run method")
@@ -150,14 +160,16 @@ while frame_counter < total_frame_counter:
         # else:
         #     final_face.append(face.breath_samples[1][-1]) 
         # visualize_breath_curves(thermal_frame.thermal_faces)
-    cv2.imshow('thermal monitoring', cv2.resize(annotation_frame, config.VISUALIZATION_RESOLUTION))
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-    print("Frames completed", str(frame_counter))
+    # cv2.imshow('thermal monitoring', cv2.resize(annotation_frame, config.VISUALIZATION_RESOLUTION))
+    # if cv2.waitKey(1) & 0xFF == ord('q'):
+    #     break
+    # print("Frames completed", str(frame_counter))
     # frame_flag = True
 
 # print(final_face)
+print("Final rate")
 print(final_br)
+print(len(final_br))
 # plot(final_face)
 plot(final_br)
 video.release()

@@ -2,6 +2,7 @@ import numpy as np
 from scipy import interpolate
 from scipy import signal
 import shortuuid
+import matplotlib.pyplot as plt
 
 from . import utils
 from . import config
@@ -129,6 +130,9 @@ class ThermalFace(object):
             the frequency with the maximum spectrum.
         """
         timestamps, samples = self.breath_samples
+        # if len(samples) % 128:
+        #     plt.plot(np.linspace(0, len(samples), len(samples)), samples)
+        #     plt.show()
 
         # print("Timestamps:")
         # print(timestamps)
@@ -138,6 +142,14 @@ class ThermalFace(object):
         sample_axes = np.arange(np.min(timestamps), np.max(timestamps), config.SPLINE_SAMPLE_INTERVAL)
         sample_frequencies, power_spectral_density = signal.periodogram(
             cubic_spline(sample_axes),
-            fs=1/config.SPLINE_SAMPLE_INTERVAL
+            fs=1.0/config.SPLINE_SAMPLE_INTERVAL
         )
+        print("power spec")
+        print(power_spectral_density)
+        print("sample frequencies")
+        print(sample_frequencies)
+        if len(sample_frequencies) > 100:
+        #     plt.plot(sample_frequencies, power_spectral_density)
+        #     plt.show()
+        #     exit(0)
         return sample_frequencies[np.argmax(power_spectral_density)]

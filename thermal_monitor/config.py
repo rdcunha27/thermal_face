@@ -11,13 +11,13 @@ FACE_LINK_THRESHOLD = 0.2
 BREATH_RATE_MIN_SAMPLE_THRESHOLD = 128
 
 # The cubic spline interval before performing FFT.
-SPLINE_SAMPLE_INTERVAL = 0.1
+SPLINE_SAMPLE_INTERVAL = 0.017
 
 # The ID of the GPU to be used. -1 for using CPU.
 GPU_ID = -1
 
 # The maximum cached frames for estimating breath rate.
-MAX_CACHED_FRAMES = 512
+MAX_CACHED_FRAMES = 256
 
 # The temperature annotation will be updated every `TEMPERATURE_UPDATE_FRAMES` frames.
 TEMPERATURE_UPDATE_FRAMES = 5
