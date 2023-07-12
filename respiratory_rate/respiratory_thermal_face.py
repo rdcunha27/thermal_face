@@ -4,9 +4,8 @@ from scipy import signal
 import shortuuid
 import matplotlib.pyplot as plt
 
-from . import utils
-from . import config
-
+import respiratory_config as config
+import respiratory_utils as utils
 
 class ThermalFace(object):
     """ An object that represents a face entity within a thermal image.
@@ -82,12 +81,14 @@ class ThermalFace(object):
         """ Returns the cropped region of a part of the face in the thermal frame 
             that is used for breath rate estimation.
         """
-        return utils.crop(self.parent.thermal_frame, [
-            (self.landmark[3, 0] + self.bounding_box[0]) // 2,
-            self.landmark[2, 1],
-            (self.landmark[4, 0] + self.bounding_box[2]) // 2,
-            self.bounding_box[3]
-        ])
+        # return utils.crop(self.parent.thermal_frame, [
+        #     (self.landmark[3, 0] + self.bounding_box[0]) // 2,
+        #     self.landmark[2, 1],
+        #     (self.landmark[4, 0] + self.bounding_box[2]) // 2,
+        #     self.bounding_box[3]
+        # ])
+        return utils.crop(self.parent.grey_frame, self.bounding_box)
+
 
     @property
     def breath_samples(self):
@@ -98,19 +99,9 @@ class ThermalFace(object):
         root = self
         while root is not None:
             timestamps = root.timestamp
-            # print("Sample values:")
-            # print(np.mean(root.breath_roi))
-            # print(samples)
             samples = [np.mean(root.breath_roi)] + samples
             root = root.previous
-        # timestamps, samples = np.array(timestamps), np.array(samples)
-        # print("breath_samples_samples")
-        # print(samples)
-        # print(np.array(samples).shape)
-        # print(np.array(timestamps).shape)
-        # if timestamps.ndim == 2:
-        #     timestamps = np.squeeze(timestamps)
-        # print(timestamps.shape)
+
         return timestamps, samples
 
     @property
@@ -130,26 +121,31 @@ class ThermalFace(object):
             the frequency with the maximum spectrum.
         """
         timestamps, samples = self.breath_samples
-        # if len(samples) % 128:
-        #     plt.plot(np.linspace(0, len(samples), len(samples)), samples)
-        #     plt.show()
 
-        # print("Timestamps:")
-        # print(timestamps)
         if len(timestamps) < config.BREATH_RATE_MIN_SAMPLE_THRESHOLD:
             return None
+        
         cubic_spline = interpolate.CubicSpline(timestamps, samples)
-        sample_axes = np.arange(np.min(timestamps), np.max(timestamps), config.SPLINE_SAMPLE_INTERVAL)
-        sample_frequencies, power_spectral_density = signal.periodogram(
-            cubic_spline(sample_axes),
-            fs=1.0/config.SPLINE_SAMPLE_INTERVAL
-        )
-        print("power spec")
-        print(power_spectral_density)
-        print("sample frequencies")
-        print(sample_frequencies)
-        # if len(sample_frequencies) > 100:
-        #     plt.plot(sample_frequencies, power_spectral_density)
-        #     plt.show()
-        #     exit(0)
-        return sample_frequencies[np.argmax(power_spectral_density)]
+        xs = np.linspace(timestamps[0], timestamps[-1], len(cubic_spline.x) * 100)
+        ys = cubic_spline(xs)
+
+        raw = np.fft.rfft(ys)
+        mag = np.abs(raw)
+        fps = config.MAX_FPS
+        L = len(xs)
+        freqs = (float(fps) / L) * np.arange((L / 2) + 1)
+
+        # Obtaining Respiration Rate (0.16-0.33 Hz, or 10-20 breaths/min)
+        rr_idx = np.where((freqs > 0.16) & (freqs <= 0.33))
+        rr_bpm = freqs[rr_idx][np.argmax(mag[rr_idx])] * 60
+
+        return rr_bpm
+
+        # cubic_spline = interpolate.CubicSpline(timestamps, samples)
+        # sample_axes = np.arange(np.min(timestamps), np.max(timestamps), config.SPLINE_SAMPLE_INTERVAL)
+        # sample_frequencies, power_spectral_density = signal.periodogram(
+        #     cubic_spline(sample_axes),
+        #     fs=1.0/config.SPLINE_SAMPLE_INTERVAL
+        # )
+
+        # return sample_frequencies[np.argmax(power_spectral_density)]
